@@ -1,5 +1,7 @@
 # grocy-family-assistant
 
+Use NiceGUI, requests, and of course Grocy to try and create a slightly more family friendly view for tracking chores
+
 Steps:
 * Clone repo
 * copy env.sample to .env
