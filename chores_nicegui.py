@@ -125,7 +125,7 @@ def execute_chore(item: ChoreItem):
         response = requests.post(
             f"{grocy_host}{CHORES_URL}{item.id}/execute",
             headers=headers,
-            data={
+            json={
                 "tracked_time": time_string,
                 "done_by": state.selected_user,
                 "skipped": "false",
