@@ -86,7 +86,7 @@ class ChoreItem:
     id: int
     name: str
     assigned_user: int
-    next_estimated_execution_time: str = None
+    next_estimated_execution_time: str = ""
 
     def complete(self) -> None:
         """
@@ -125,7 +125,7 @@ def execute_chore(item: ChoreItem):
         response = requests.post(
             f"{grocy_host}{CHORES_URL}{item.id}/execute",
             headers=headers,
-            json={
+            data={
                 "tracked_time": time_string,
                 "done_by": state.selected_user,
                 "skipped": "false",
@@ -468,9 +468,8 @@ def get_key(my_dict, val):
     return 0
 
 
-usertoggle = ui.toggle(
-    users, on_change=lambda: (set_current_user(), chore_ui.refresh())
-).props("inline")
+# pylint: disable-next=unnecessary-lambda
+usertoggle = ui.toggle(users, on_change=lambda: set_current_user()).props("inline")
 
 
 def set_current_user():
@@ -487,6 +486,7 @@ def set_current_user():
         None
     """
     state.update_selected_user(usertoggle.value)
+    chore_ui.refresh()
 
 
 choreslist = ChoreList("Chores", on_change=chore_ui.refresh)
