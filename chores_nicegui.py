@@ -276,7 +276,7 @@ class ChoreList:
             self.on_change()
 
 
-def replace(chore_item, local_state):
+def update_dialog(chore_item, local_state):
     """
     Replaces the ui.dialog with a new one based on the user and chore selected.
 
@@ -331,93 +331,44 @@ def chore_ui():
     # if in the past
     ui.label("PAST DUE")
     for chore_item in choreslist.items:
-        execute_time = datetime.strptime(
-            chore_item.next_estimated_execution_time, "%Y-%m-%d %H:%M:%S"
-        )
-        if execute_time < time_now:
-            with ui.row().classes("items-center"):
-                ui.button(
-                    f"{users[chore_item.assigned_user].upper()} - {chore_item.name}",
-                    on_click=lambda chore_item=chore_item: replace(chore_item, state),
-                ).props("no-caps color=deep-orange text-color=white")
+        if chore_item.next_estimated_execution_time is not None:
+            execute_time = datetime.strptime(
+                chore_item.next_estimated_execution_time, "%Y-%m-%d %H:%M:%S"
+            )
+            if execute_time < time_now:
+                with ui.row().classes("items-center"):
+                    ui.button(
+                        f"{users[chore_item.assigned_user].upper()} - {chore_item.name}",
+                        on_click=lambda chore_item=chore_item: update_dialog(chore_item, state),
+                    ).props("no-caps color=deep-orange text-color=white")
 
     # if between now and 24 hours
     ui.label("< 24 hours")
     for chore_item in choreslist.items:
-        execute_time = datetime.strptime(
-            chore_item.next_estimated_execution_time, "%Y-%m-%d %H:%M:%S"
-        )
-        # Create the user and chore name string
-        user_chore_str = (
-            f"{users[chore_item.assigned_user].upper()} - {chore_item.name}"
-        )
+        if chore_item.next_estimated_execution_time is not None:
+            execute_time = datetime.strptime(
+                chore_item.next_estimated_execution_time, "%Y-%m-%d %H:%M:%S"
+            )
+            # Create the user and chore name string
+            user_chore_str = (
+                f"{users[chore_item.assigned_user].upper()} - {chore_item.name}"
+            )
+            # Create the time difference string
+            time_diff_str = f" - ~{time_diff(execute_time)}"
 
-        # Create the time difference string
-        time_diff_str = f" - ~{time_diff(execute_time)}"
+            # Combine the strings
+            message = user_chore_str + time_diff_str
 
-        # Combine the strings
-        message = user_chore_str + time_diff_str
-
-        if execute_time > time_now and execute_time <= time_now + timedelta(hours=24):
-            with ui.row().classes("items-center"):
-                ui.button(
-                    message,
-                    on_click=lambda chore_item=chore_item: replace(chore_item, state),
-                ).props("no-caps color=amber text-color=black")
+            if execute_time > time_now and execute_time <= time_now + timedelta(hours=24):
+                with ui.row().classes("items-center"):
+                    ui.button(
+                        message,
+                        on_click=lambda chore_item=chore_item: update_dialog(chore_item, state),
+                    ).props("no-caps color=amber text-color=black")
     # if <48 hours
     ui.label("< 48 hours")
     for chore_item in choreslist.items:
-        execute_time = datetime.strptime(
-            chore_item.next_estimated_execution_time, "%Y-%m-%d %H:%M:%S"
-        )
-        # Create the user and chore name string
-        user_chore_str = (
-            f"{users[chore_item.assigned_user].upper()} - {chore_item.name}"
-        )
-
-        # Create the time difference string
-        time_diff_str = f" - ~{time_diff(execute_time)}"
-
-        # Combine the strings
-        message = user_chore_str + time_diff_str
-
-        if execute_time >= time_now + timedelta(
-            hours=24
-        ) and execute_time <= time_now + timedelta(hours=48):
-            with ui.row().classes("items-center"):
-                ui.button(
-                    message,
-                    on_click=lambda chore_item=chore_item: replace(chore_item, state),
-                ).props("no-caps")
-    # if <168 hours (1 week)
-    ui.label("< 1 week")
-    for chore_item in choreslist.items:
-        execute_time = datetime.strptime(
-            chore_item.next_estimated_execution_time, "%Y-%m-%d %H:%M:%S"
-        )
-        # Create the user and chore name string
-        user_chore_str = (
-            f"{users[chore_item.assigned_user].upper()} - {chore_item.name}"
-        )
-
-        # Create the time difference string
-        time_diff_str = f" - ~{time_diff(execute_time)}"
-
-        # Combine the strings
-        message = user_chore_str + time_diff_str
-
-        if execute_time >= time_now + timedelta(
-            hours=48
-        ) and execute_time <= time_now + timedelta(days=7):
-            with ui.row().classes("items-center"):
-                ui.button(
-                    message,
-                    on_click=lambda chore_item=chore_item: replace(chore_item, state),
-                ).props("no-caps color=green")
-    # Add a collapsible section for the final list of chores
-    with ui.expansion("Future chores"):
-        # as final_list:
-        for chore_item in choreslist.items:
+        if chore_item.next_estimated_execution_time is not None:
             execute_time = datetime.strptime(
                 chore_item.next_estimated_execution_time, "%Y-%m-%d %H:%M:%S"
             )
@@ -432,15 +383,68 @@ def chore_ui():
             # Combine the strings
             message = user_chore_str + time_diff_str
 
-            if execute_time > time_now + timedelta(days=7):
-                # Add each chore to the final list
+            if execute_time >= time_now + timedelta(
+                hours=24
+            ) and execute_time <= time_now + timedelta(hours=48):
                 with ui.row().classes("items-center"):
                     ui.button(
                         message,
-                        on_click=lambda chore_item=chore_item: replace(
-                            chore_item, state
-                        ),
+                        on_click=lambda chore_item=chore_item: update_dialog(chore_item, state),
+                    ).props("no-caps")
+    # if <168 hours (1 week)
+    ui.label("< 1 week")
+    for chore_item in choreslist.items:
+        if chore_item.next_estimated_execution_time is not None:
+            execute_time = datetime.strptime(
+                chore_item.next_estimated_execution_time, "%Y-%m-%d %H:%M:%S"
+            )
+            # Create the user and chore name string
+            user_chore_str = (
+                f"{users[chore_item.assigned_user].upper()} - {chore_item.name}"
+            )
+
+            # Create the time difference string
+            time_diff_str = f" - ~{time_diff(execute_time)}"
+
+            # Combine the strings
+            message = user_chore_str + time_diff_str
+
+            if execute_time >= time_now + timedelta(
+                hours=48
+            ) and execute_time <= time_now + timedelta(days=7):
+                with ui.row().classes("items-center"):
+                    ui.button(
+                        message,
+                        on_click=lambda chore_item=chore_item: update_dialog(chore_item, state),
                     ).props("no-caps color=green")
+    # Add a collapsible section for the final list of chores
+    with ui.expansion("Future chores"):
+        # as final_list:
+        for chore_item in choreslist.items:
+            if chore_item.next_estimated_execution_time is not None:
+                execute_time = datetime.strptime(
+                    chore_item.next_estimated_execution_time, "%Y-%m-%d %H:%M:%S"
+                )
+                # Create the user and chore name string
+                user_chore_str = (
+                    f"{users[chore_item.assigned_user].upper()} - {chore_item.name}"
+                )
+
+                # Create the time difference string
+                time_diff_str = f" - ~{time_diff(execute_time)}"
+
+                # Combine the strings
+                message = user_chore_str + time_diff_str
+
+                if execute_time > time_now + timedelta(days=7):
+                    # Add each chore to the final list
+                    with ui.row().classes("items-center"):
+                        ui.button(
+                            message,
+                            on_click=lambda chore_item=chore_item: update_dialog(
+                                chore_item, state
+                            ),
+                        ).props("no-caps color=green")
 
 
 # This seems to be needed, so that we can replace the dialog when completing chores.
