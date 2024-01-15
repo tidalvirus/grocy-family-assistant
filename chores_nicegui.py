@@ -62,7 +62,9 @@ def time_diff(execute_time: datetime) -> str:
     time_difference = (execute_time - datetime.now()).total_seconds()
 
     # Convert the time difference to hours or days
-    if time_difference < 60 * 60 * 24:  # less than 24 hours
+    if time_difference < 60 * 60:  # less than 1 hour
+        due_time = f"{int(time_difference / 60)}m"
+    elif time_difference < 60 * 60 * 24:  # less than 24 hours
         due_time = f"{int(time_difference / (60 * 60))}h"  # convert to hours
     else:
         due_time = f"{int(time_difference / (60 * 60 * 24))}d"  # convert to days
@@ -341,9 +343,8 @@ def chore_ui():
                         f"{users[chore_item.assigned_user].upper()} - {chore_item.name}",
                         on_click=lambda chore_item=chore_item: update_dialog(chore_item, state),
                     ).props("no-caps color=deep-orange text-color=white")
-
-    # if between now and 24 hours
-    ui.label("< 24 hours")
+    # if due today
+    ui.label("Due today")
     for chore_item in choreslist.items:
         if chore_item.next_estimated_execution_time is not None:
             execute_time = datetime.strptime(
@@ -359,14 +360,18 @@ def chore_ui():
             # Combine the strings
             message = user_chore_str + time_diff_str
 
-            if execute_time > time_now and execute_time <= time_now + timedelta(hours=24):
+            # Get the end of the current day (midnight of the next day)
+            end_of_day = datetime.now().replace(hour=23, minute=59, second=59)
+
+            if execute_time > time_now and execute_time <= end_of_day:
                 with ui.row().classes("items-center"):
                     ui.button(
                         message,
                         on_click=lambda chore_item=chore_item: update_dialog(chore_item, state),
                     ).props("no-caps color=amber text-color=black")
+
     # if <48 hours
-    ui.label("< 48 hours")
+    ui.label("Tomorrow:")
     for chore_item in choreslist.items:
         if chore_item.next_estimated_execution_time is not None:
             execute_time = datetime.strptime(
@@ -383,9 +388,11 @@ def chore_ui():
             # Combine the strings
             message = user_chore_str + time_diff_str
 
-            if execute_time >= time_now + timedelta(
-                hours=24
-            ) and execute_time <= time_now + timedelta(hours=48):
+            # Get the start and end of the next day
+            start_of_next_day = (datetime.now() + timedelta(days=1)).replace(hour=0, minute=0, second=0)
+            end_of_next_day = (datetime.now() + timedelta(days=2)).replace(hour=0, minute=0, second=0)
+
+            if execute_time >= start_of_next_day and execute_time < end_of_next_day:
                 with ui.row().classes("items-center"):
                     ui.button(
                         message,
